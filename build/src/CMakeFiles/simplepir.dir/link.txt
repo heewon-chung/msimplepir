@@ -1,0 +1,2 @@
+/Library/Developer/CommandLineTools/usr/bin/ar qc libsimplepir.a CMakeFiles/simplepir.dir/database.cpp.o CMakeFiles/simplepir.dir/parameter.cpp.o CMakeFiles/simplepir.dir/util.cpp.o CMakeFiles/simplepir.dir/simplepir.cpp.o
+/Library/Developer/CommandLineTools/usr/bin/ranlib libsimplepir.a
