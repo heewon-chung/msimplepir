@@ -14,33 +14,51 @@ void MLWEtoLWE(const mlwe_parameter& mlwe_param, pir_parameter& pir_param)
     int numCol = rank * degree;
     int rowIdx = 0;
 
-    matrix crs;
-    crs.resize(numRow, vector<int64_t>(numCol));
+    matrix crs(numRow, vector<int64_t>(numCol));
 
     // i: row
-    for(int i = 0; i < numInstance; i++)
+    // for(int i = 0; i < numInstance; i++)
+    // {
+    //     // j: column
+    //     int colIdx = 0;
+    //     int rowIdx = i * degree;
+    //     for(int j = 0; j < rank; j++)
+    //     {
+    //         // tmp \in R_q
+    //         poly tmp = mlwe_crs[i][j];
+    //         for(int k = 0; k < degree; k++)
+    //         {
+    //             // transpose 
+    //             for(int deg = 0; deg < degree; deg++)
+    //             {
+    //                 crs[rowIdx + deg][colIdx] = tmp[deg];
+    //             }
+    //             uint64_t lastElement = tmp.back();
+    //             for(int deg = degree - 1; deg > 0; deg--)
+    //             {
+    //                 tmp[deg] = tmp[deg - 1];
+    //             }
+    //             tmp[0] = ctxt_modulus - lastElement;
+    //             colIdx++;
+    //         }
+    //     }
+    // }
+
+    for(int i = 0; i < numInstance; ++i)
     {
-        // j: column
-        int colIdx = 0;
         int rowIdx = i * degree;
-        for(int j = 0; j < rank; j++)
+        for(int j = 0; j < rank; ++j)
         {
-            // tmp \in R_q
             poly tmp = mlwe_crs[i][j];
-            for(int k = 0; k < degree; k++)
+            for(int k = 0; k < degree; ++k)
             {
-                // transpose 
-                for(int deg = 0; deg < degree; deg++)
+                int colIdx = j * degree + k;
+                for(int deg = 0; deg < degree; ++deg)
                 {
                     crs[rowIdx + deg][colIdx] = tmp[deg];
                 }
-                uint64_t lastElement = tmp.back();
-                for(int deg = degree - 1; deg > 0; deg--)
-                {
-                    tmp[deg] = tmp[deg - 1];
-                }
-                tmp[0] = ctxt_modulus - lastElement;
-                colIdx++;
+                std::rotate(tmp.rbegin(), tmp.rbegin() + 1, tmp.rend());
+                tmp[0] = ctxt_modulus - tmp[0];
             }
         }
     }
@@ -98,21 +116,20 @@ void query(const mlwe_parameter& mlwe_param, const pir_parameter& pir_param, con
     }
 
     // mlwe_crs * sk
-    qry.resize(numInstance);
-    poly tmp(degree);
-    for(int i = 0; i < numInstance; i++)
+    qry.resize(numInstance, poly(degree, 0));
+    // #pragma omp parallel for
+    for(int i = 0; i < numInstance; ++i)
     {
-        // mlwe_crs \cdot sk
-        qry[i].resize(degree);
-        for(int j = 0; j < rank; j++)
+        poly tmp(degree);
+        for(int j = 0; j < rank; ++j)
         {
-            // root 3
+            // Multiply mlwe_crs[i][j] with sk[j] using NTT
             multiply_ntt(mlwe_crs[i][j], sk[j], tmp, ctxt_modulus, 3);
-            // add to qry
-            for(int k = 0; k < tmp.size(); k++)
+            // Add tmp to qry[i] and ensure results are within modulus
+            for(int k = 0; k < degree; ++k)
             {
-                qry[i][k] += tmp[k];
-                qry[i][k] = (qry[i][k] % ctxt_modulus + ctxt_modulus) % ctxt_modulus;
+                // #pragma omp atomic
+                qry[i][k] = (qry[i][k] + tmp[k]) % ctxt_modulus;
             }
         }
     }
@@ -120,6 +137,31 @@ void query(const mlwe_parameter& mlwe_param, const pir_parameter& pir_param, con
     qry[blk][pos]++;
 
 }
+
+
+void query(const pir_parameter& pir_param, const int qryCol, vector<int64_t> qry, int64_t ctxt_modulus)
+{
+    matrix crs = pir_param.getCRS();
+    int numRow = crs.size();
+    int numCol = crs[0].size();
+    qry.resize(numRow);
+
+    vector<int64_t> sk_lwe;
+    randVector(sk_lwe, numCol, ctxt_modulus);
+
+    for(int i = 0; i < numRow; i++)
+    {
+        for(int j = 0; j < crs[i].size(); j++)
+        {
+            qry[i] += crs[i][j] * sk_lwe[j];
+        }
+        qry[i] = (qry[i] % ctxt_modulus + ctxt_modulus) % ctxt_modulus;
+    }
+
+    qry[qryCol]++;
+}
+
+
 
 void answer(const mlwe_parameter& mlwe_param, const pir_parameter& pir_param, const database& db, const vector<poly>& qry, vector<int64_t>& ans)
 {
@@ -139,7 +181,6 @@ void answer(const mlwe_parameter& mlwe_param, const pir_parameter& pir_param, co
 void recover(const mlwe_parameter& mlwe_param, const vector<int64_t>& ans, const matrix& hint_client, const vector<poly>& sk, const int qryRow, int64_t& res)
 {
     // vector<int64_t> sk_tmp, db_tmp;
-    uint64_t ptxt_modulus = mlwe_param.getPtxtModulus();
     uint64_t ctxt_modulus = mlwe_param.getCtxtModulus();
     res = ans[qryRow];
 
@@ -151,10 +192,10 @@ void recover(const mlwe_parameter& mlwe_param, const vector<int64_t>& ans, const
         for(int j = 0; j < sk[i].size(); j++)
         {
             tmp += hint_client[qryRow][idx] * sk[i][j];
+            tmp = (tmp % ctxt_modulus + ctxt_modulus) % ctxt_modulus;
             idx++;
         }
     }
-    tmp = (tmp % ctxt_modulus + ctxt_modulus) % ctxt_modulus;
     res = res - tmp;
     res = (res % ctxt_modulus + ctxt_modulus) % ctxt_modulus;
     assert(idx == sk.size() * sk[0].size());
