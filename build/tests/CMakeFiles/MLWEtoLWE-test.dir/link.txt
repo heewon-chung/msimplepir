@@ -1,1 +1,0 @@
-/Library/Developer/CommandLineTools/usr/bin/c++  -O3 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk -Wl,-search_paths_first -Wl,-headerpad_max_install_names "CMakeFiles/MLWEtoLWE-test.dir/test-mlwe2lwe.cpp.o" -o MLWEtoLWE-test  ../src/libsimplepir.a
