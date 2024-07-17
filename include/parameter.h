@@ -18,7 +18,7 @@ private:
 
 public:
     mlwe_parameter();
-    mlwe_parameter(const database& db);
+    mlwe_parameter(const database& db, const int degree, const int rank);
 
     int getDegree() const {return degree;}
     int getRank() const {return rank;}
@@ -37,20 +37,17 @@ public:
 class pir_parameter
 {
 private:
-    // uint64_t ptxt_modulus;
     // uint64_t ctxt_modulus;
     matrix crs;
 
 public:
     pir_parameter()
     {
-        // ptxt_modulus = 10;
-        // ctxt_modulus = 100;
+        // ctxt_modulus = 0;
         crs.clear();
     }
     pir_parameter(database& db);  
 
-    // int getPtxtModulus() const {return ptxt_modulus;}
     // int getCtxtModulus() const {return ctxt_modulus;}
     void setCRS(matrix crs) {this -> crs = crs;}
     matrix getCRS() const {return crs;}

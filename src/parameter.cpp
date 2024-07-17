@@ -16,7 +16,7 @@ mlwe_parameter::mlwe_parameter()
     this -> crs = crs;
 }
 
-mlwe_parameter::mlwe_parameter(const database& db)
+mlwe_parameter::mlwe_parameter(const database& db, const int degree, const int rank)
 {
     int numCol = db.getNumCol();
     int numRow = db.getNumRow();
@@ -27,15 +27,16 @@ mlwe_parameter::mlwe_parameter(const database& db)
     ctxt_modulus = 998244353;
     ptxt_modulus = 10;
 
-    degree = 4;
-    rank = 3;
-
     numInstance = numRow / degree;
 
     ringMatrix crs;
     randMatrix(crs, numInstance, rank, degree, ctxt_modulus);
 
+    this -> degree = degree;
+    this -> rank = rank;
     this -> crs = crs;
+
+    print();
 }
 
 
