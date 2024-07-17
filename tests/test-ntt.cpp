@@ -40,11 +40,11 @@ void multiply_naive(const poly& src1, const poly& src2, poly& dest, int64_t modu
 
 int main() 
 {
-    // uint64_t mod = 998244353;
-    uint64_t mod = 17; // p = k 2^m + 1
+    uint64_t mod = 998244353;
+    // uint64_t mod = 17; // p = k 2^m + 1
     // 2m-th root of unity
     int64_t primitive_root = 3; // A primitive root modulo mod
-    int64_t degree = 4; // Degree of polynomials (n-1)
+    int64_t degree = 32; // Degree of polynomials (n-1)
     // int64_t root = get_root_of_unity(degree * 2, mod, primitive_root);
     // int64_t root = 3;
 

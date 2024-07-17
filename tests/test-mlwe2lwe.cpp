@@ -149,12 +149,18 @@ void instance_conversion(int degree, int rank, int numInstance, int64_t ctxt_mod
     
     printf("    - Decrypting message is...  ");print(dec_msg);
 
+    for(int i = 0; i < msg.size(); i++)
+    {
+        if(msg[i] != dec_msg[i])
+            cerr << i << "th msg is different\n";
+    }
+
 }
 
 
 int main()
 {
-    int degree = 4;
+    int degree = 512;
     int rank = 3;
     int numInstance = 5;
     int64_t ctxt_modulus = 998244353;

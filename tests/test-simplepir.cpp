@@ -87,7 +87,7 @@ int main()
     query(pir_param, qryCol, qry_lwe, mlwe_param.getCtxtModulus());
     end = get_time();
     total_time = end - start;
-    printf("\n\tCompared to LWE-based query, we can save %Lf query time.", qry_time / total_time * 100);
+    printf("\n\tCompared to LWE-based query, we can save %Lf %%", qry_time / total_time * 100);
 
 #if __DEBUG == 3
     poly tmp1, tmp2;

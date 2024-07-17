@@ -58,6 +58,7 @@ int main()
     {
         multCtxt[i] -= tmp[i];
         multCtxt[i] = (multCtxt[i] % ctxt_modulus + ctxt_modulus) % ctxt_modulus;
+        multCtxt[i] %= ptxt_modulus;
     }
 
     cout << "Ciphertext Multiplication:\t"; print(multCtxt);

@@ -121,11 +121,11 @@ void matrixMultiply(const matrix& matrix1, const matrix& matrix2, const uint64_t
     }
 
     // Resize the result matrix
-    resultMatrix.resize(numRows1);
-    for (int i = 0; i < numRows1; ++i) 
-    {
-        resultMatrix[i].resize(numCols2);
-    }
+    resultMatrix.resize(numRows1, vector<int64_t>(numCols2));
+    // for (int i = 0; i < numRows1; ++i) 
+    // { 
+    //     resultMatrix[i].resize(numCols2);
+    // }
 
     // Perform matrix multiplication over Z_q
     for (int i = 0; i < numRows1; ++i) 

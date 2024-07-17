@@ -11,7 +11,7 @@ using namespace std;
 int main()
 {
     int rank = 3;
-    int degree = 4; 
+    int degree = 512; 
     int scale = 10;
     int64_t ctxt_modulus = 7919;
 
