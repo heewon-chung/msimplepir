@@ -14,10 +14,10 @@ long double get_time()
 
 int main()
 {
-    int numRow = 2048;
-    int numCol = 2048;
+    int numRow = 1024;
+    int numCol = 1024;
 
-    int degree = 256;
+    int degree = 32;
     int rank = 3;
 
     database db(numRow, numCol);
