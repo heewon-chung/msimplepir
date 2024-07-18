@@ -59,10 +59,6 @@ void setup(parameter& param, const database& db, matrix& hint_client)
 
 void query(const parameter& param, const int col, vector<poly>& qry, vector<poly>& sk)
 {
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_int_distribution<uint64_t> error_distribution(0, 3); // Use uint64_t for distribution range
-    
     int rank = param.getRank();
     int degree = param.getDegree();
     int numInstance = param.getNumInstance();
@@ -117,28 +113,30 @@ void query(const parameter& param, const int col, vector<poly>& qry, vector<poly
 }
 
 
-void query(const parameter& param, const int qryCol, vector<int64_t> qry, int64_t ctxt_modulus)
+void query(const parameter& param, const int qryCol, vector<int64_t>& qry, int64_t ctxt_modulus)
 {
-    matrix crs = param.getCRSforLWE();
+    const matrix& crs = param.getCRSforLWE();
     int scale = param.getScale();
     int numRow = crs.size();
     int numCol = crs[0].size();
-    qry.resize(numRow);
+    qry.resize(numRow, 0);
 
-    vector<int64_t> sk_lwe;
+    vector<int64_t> sk_lwe(numCol);
     randVector(sk_lwe, numCol, ctxt_modulus);
 
-    for(int i = 0; i < numRow; i++)
+    #pragma omp parallel for
+    for (int i = 0; i < numRow; i++)
     {
-        for(int j = 0; j < crs[i].size(); j++)
+        int64_t sum = 0;
+        for (int j = 0; j < numCol; j++)
         {
             // mean 0 & stddev 6.4
-            qry[i] += crs[i][j] * sk_lwe[j] + generateDiscreteGaussian(0, 6.4);
+            sum += crs[i][j] * sk_lwe[j] + generateDiscreteGaussian(0, 6.4);
         }
-        qry[i] = (qry[i] % ctxt_modulus + ctxt_modulus) % ctxt_modulus;
+        #pragma omp atomic
+        qry[i] = (sum % ctxt_modulus + ctxt_modulus) % ctxt_modulus;
     }
 
-    // mean 0 and stddev 6.4
     qry[qryCol] = (qry[qryCol] + scale) % ctxt_modulus;
 }
 
