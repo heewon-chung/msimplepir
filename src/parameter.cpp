@@ -24,11 +24,12 @@ parameter::parameter(const database& db, const int degree, const int rank)
     // p = k 2^m + 1
     // 2m-th root of unity
     // ctxt_modulus = 17;
-    ctxt_modulus = 998244353;
-    ptxt_modulus = 1000;
+    ctxt_modulus = 2013265921;
+    root = 31;
+
+    ptxt_modulus = 1001;
     scale = ctxt_modulus / ptxt_modulus;
 
-    root = 3;
     numInstance = numRow / degree;
 
     // initiate CRS for MLWE and LWE
@@ -40,6 +41,7 @@ parameter::parameter(const database& db, const int degree, const int rank)
     this -> mlwe_crs = mlwe_crs;
     this -> lwe_crs = lwe_crs;
 
+    printf("\nParameter Set\n");
     print();
 }
 
