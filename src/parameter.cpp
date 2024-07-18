@@ -32,10 +32,8 @@ parameter::parameter(const database& db, const int degree, const int rank)
     numInstance = numRow / degree;
 
     // initiate CRS for MLWE and LWE
-    ringMatrix mlwe_crs;
+    ringMatrix mlwe_crs(numInstance, vector<poly>(degree));
     matrix lwe_crs(numInstance * degree, vector<int64_t>(rank * degree));
-
-    randMatrix(mlwe_crs, numInstance, rank, degree, ctxt_modulus); // move to setup
 
     this -> degree = degree;
     this -> rank = rank;
@@ -54,16 +52,3 @@ void parameter::print()
     cout << "   - MLWE CRS size: " << mlwe_crs.size() << " * " << mlwe_crs[0].size() << endl;
     cout << "   - PIR CRS size: " << lwe_crs.size() << " * " << lwe_crs[0].size() << endl;
 }
-
-
-// pir_parameter::pir_parameter(database& db)
-// {
-//     matrix ref_db = db.getDB();
-
-//     crs.resize(ref_db.size());
-//     for(int i = 0; i < crs.size(); i++)
-//     {
-//         crs[i].resize(ref_db[i].size());
-//     }
-// }
-

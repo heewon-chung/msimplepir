@@ -6,7 +6,9 @@ void MLWEtoLWE(parameter& param)
     int degree = param.getDegree();
     int numInstance = param.getNumInstance();
     uint64_t ctxt_modulus = param.getCtxtModulus();
-    ringMatrix mlwe_crs = param.getCRSforMLWE();
+    // ringMatrix mlwe_crs = param.getCRSforMLWE();
+    ringMatrix mlwe_crs;
+    randMatrix(mlwe_crs, numInstance, rank, degree, ctxt_modulus); // move to setup
 
     assert(mlwe_crs.size() == numInstance);
 
@@ -35,6 +37,7 @@ void MLWEtoLWE(parameter& param)
         }
     }
 
+    param.setCRSforMLWE(mlwe_crs);
     param.setCRSforLWE(lwe_crs);
 
 }
@@ -44,6 +47,8 @@ void setup(parameter& param, const database& db, matrix& hint_client)
 {
     int db_col = db.getNumCol();
     int degree = param.getDegree();
+    int rank = param.getRank();
+    int numInstance = param.getNumInstance();
     uint64_t ctxtModulus = param.getCtxtModulus();
 
     MLWEtoLWE(param);
