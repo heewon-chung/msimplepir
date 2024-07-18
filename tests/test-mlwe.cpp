@@ -11,19 +11,21 @@ using namespace std;
 int main()
 {
     int rank = 3;
-    int degree = 512; 
-    int scale = 10;
+    int degree = 16; 
     int64_t ctxt_modulus = 7919;
+    int64_t ptxt_modulus = 31;
+    int scale = ctxt_modulus / ptxt_modulus;
+    int mean = 0;
+    double stddev = 6.4;
 
     random_device rd;
     mt19937 gen(rd());
-    uniform_int_distribution<uint64_t> msg_space(0, 30); // Use uint64_t for distribution range
-    uniform_int_distribution<uint64_t> error_distribution(0, 3); // Use uint64_t for distribution range
+    uniform_int_distribution<uint64_t> msg_space(0, ptxt_modulus); // Use uint64_t for distribution range
 
     vector<poly> sk(rank), a(rank);
 
-    cout << "Encrypting...\n";
-    poly b(degree), tmp;
+    
+    poly b(degree), tmp, msg_poly;
     for(int i = 0; i < rank; i++)
     {
         randVector(sk[i], degree, ctxt_modulus);
@@ -37,17 +39,19 @@ int main()
         }
     }
     // invert_ntt(b, b, ctxt_modulus, 3);
-    
+
     for(int i = 0; i < degree; i++)
     {
         auto msg = msg_space(gen);
-        b[i] += msg * scale + error_distribution(gen);
+        msg_poly.push_back(msg);
+        b[i] += msg_poly[i] * scale + generateDiscreteGaussian(mean, stddev);
         b[i] = (b[i] % ctxt_modulus + ctxt_modulus) % ctxt_modulus;
-        cout << msg << "\t";
     }
+
+    printf("\nEncrypting...\n");
+    print(msg_poly);
     
     poly dec_msg = b;
-    cout << "\nDecrypting...\n";
     for(int i = 0; i < rank; i++)
     {
         multiply_ntt(a[i], sk[i], tmp, ctxt_modulus, 3);
@@ -60,10 +64,20 @@ int main()
     
     for(int i = 0; i < degree; i++)
     {
-        dec_msg[i] /= scale;
+        // dec_msg[i] /= scale;
+        dec_msg[i] = (2 * dec_msg[i] + scale) / (scale << 1);
     }
 
+    printf("\nDecrypting...\n");
     print(dec_msg);
+
+    for(int i = 0; i < degree; i++)
+    {
+        if(msg_poly[i] != dec_msg[i])
+        {
+            cerr << i << "th msg is wrong!" << endl;
+        }
+    }
 
     return 0;
 }

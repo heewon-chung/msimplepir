@@ -3,7 +3,7 @@
 #include "database.h"
 #include "simplepir.h"
 
-#define __DEBUG 1
+#define __DEBUG 0
 
 long double get_time() 
 {
@@ -22,7 +22,7 @@ int main()
 
     database db(numRow, numCol);
     
-#if __DEBUG == 3
+#if __DEBUG == 1
     cout << "=== Database ===" << endl;
     print(db.getDB());
 #endif
@@ -31,12 +31,6 @@ int main()
     int qryCol = 1;
 
     long double start, end, total_time, qry_time;
-
-#if __DEBUG == 1
-    cout << "\n Parameter Set " << endl;
-    db.print();
-    // pir_param.print();
-#endif
 
     parameter param(db, degree, rank);
     matrix hint_client;
@@ -91,7 +85,7 @@ int main()
     printf("   - LWE-based Query: %Lf\n", total_time);
 
 
-#if __DEBUG == 3
+#if __DEBUG == 2
     poly tmp1, tmp2;
     int64_t ctxt_modulus = param.getCtxtModulus();
     int numInstance = param.getNumInstance();

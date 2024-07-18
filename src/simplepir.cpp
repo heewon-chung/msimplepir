@@ -120,6 +120,7 @@ void query(const parameter& param, const int col, vector<poly>& qry, vector<poly
 void query(const parameter& param, const int qryCol, vector<int64_t> qry, int64_t ctxt_modulus)
 {
     matrix crs = param.getCRSforLWE();
+    int scale = param.getScale();
     int numRow = crs.size();
     int numCol = crs[0].size();
     qry.resize(numRow);
@@ -136,7 +137,7 @@ void query(const parameter& param, const int qryCol, vector<int64_t> qry, int64_
         qry[i] = (qry[i] % ctxt_modulus + ctxt_modulus) % ctxt_modulus;
     }
 
-    qry[qryCol]++;
+    qry[qryCol] += scale + generateDiscreteGaussian(0, 6.4);
 }
 
 
@@ -155,9 +156,11 @@ void answer(const parameter& param, const database& db, const vector<poly>& qry,
     matrixMultiply(db.getDB(), qryLWE, param.getCtxtModulus(), ans);
 }
 
+
 void recover(const parameter& param, const vector<int64_t>& ans, const matrix& hint_client, const vector<poly>& sk, const int qryRow, int64_t& res)
 {
     uint64_t ctxt_modulus = param.getCtxtModulus();
+    int scale = param.getScale();
     res = ans[qryRow];
 
     int idx = 0;
@@ -175,7 +178,7 @@ void recover(const parameter& param, const vector<int64_t>& ans, const matrix& h
     }
     res = (res - tmp) % ctxt_modulus;
     res = (res + ctxt_modulus) % ctxt_modulus;
-    res /= param.getScale();
+    res = (2 * res + scale) / (scale << 1);
 
     assert(idx == static_cast<int>(sk.size() * sk[0].size()));
 }
