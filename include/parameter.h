@@ -5,55 +5,65 @@
 #include "util.h"
 #include "database.h"
 
-class mlwe_parameter
+class parameter
 {
 private:
     int degree;
     int rank;
     int numInstance;
 
+    int root;
+
     uint64_t ptxt_modulus;
     uint64_t ctxt_modulus;
-    ringMatrix crs;
+    uint64_t scale;
+
+    ringMatrix mlwe_crs;
+    matrix lwe_crs;
 
 public:
-    mlwe_parameter();
-    mlwe_parameter(const database& db, const int degree, const int rank);
+    parameter();
+    parameter(const database& db, const int degree, const int rank);
 
     int getDegree() const {return degree;}
     int getRank() const {return rank;}
     int getNumInstance() const {return numInstance;}
+    int getRoot() const {return root;}
 
-    void setCRS(ringMatrix crs) {this -> crs = crs;}
-    ringMatrix getCRS() const {return crs;}
+    void setCRSforMLWE (ringMatrix crs) {mlwe_crs = crs;}
+    ringMatrix getCRSforMLWE() const {return mlwe_crs;}
+
+    void setCRSforLWE(matrix crs) {lwe_crs = crs;}
+    matrix getCRSforLWE() const {return lwe_crs;}
 
     uint64_t getPtxtModulus() const {return ptxt_modulus;}
     uint64_t getCtxtModulus() const {return ctxt_modulus;}
+    uint64_t getScale() const {return scale;}
 
     void print();
 };
 
 
-class pir_parameter
-{
-private:
-    // uint64_t ctxt_modulus;
-    matrix crs;
+// class pir_parameter
+// {
+// private:
+//     // uint64_t ctxt_modulus;
+//     matrix crs;
 
-public:
-    pir_parameter()
-    {
-        // ctxt_modulus = 0;
-        crs.clear();
-    }
-    pir_parameter(database& db);  
+// public:
+//     pir_parameter()
+//     {
+//         // ctxt_modulus = 0;
+//         crs.clear();
+//     }
+//     pir_parameter(database& db);  
 
-    // int getCtxtModulus() const {return ctxt_modulus;}
-    void setCRS(matrix crs) {this -> crs = crs;}
-    matrix getCRS() const {return crs;}
+//     // int getCtxtModulus() const {return ctxt_modulus;}
+//     void setCRS(matrix crs) {this -> crs = crs;}
+//     matrix getCRS() const {return crs;}
 
-    void print();
-};
+//     void print();
+// };
 
 
 #endif

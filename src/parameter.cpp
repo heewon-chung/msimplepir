@@ -1,6 +1,6 @@
 #include "parameter.h"
 
-mlwe_parameter::mlwe_parameter()
+parameter::parameter()
 {
     // security = 128;
     degree = 0;
@@ -9,14 +9,14 @@ mlwe_parameter::mlwe_parameter()
     ptxt_modulus = 0;
     ctxt_modulus = 0;
 
-    ringMatrix crs;
-    // randMatrix(crs, rank, degree, ctxt_modulus);
-    crs.clear();
+    ringMatrix mlwe_crs;    mlwe_crs.clear();
+    matrix lwe_crs;         lwe_crs.clear();
 
-    this -> crs = crs;
+    this -> mlwe_crs = mlwe_crs;
+    this -> lwe_crs = lwe_crs;
 }
 
-mlwe_parameter::mlwe_parameter(const database& db, const int degree, const int rank)
+parameter::parameter(const database& db, const int degree, const int rank)
 {
     int numCol = db.getNumCol();
     int numRow = db.getNumRow();
@@ -25,44 +25,45 @@ mlwe_parameter::mlwe_parameter(const database& db, const int degree, const int r
     // 2m-th root of unity
     // ctxt_modulus = 17;
     ctxt_modulus = 998244353;
-    ptxt_modulus = 10;
+    ptxt_modulus = 1000;
+    scale = ctxt_modulus / ptxt_modulus;
 
+    root = 3;
     numInstance = numRow / degree;
 
-    ringMatrix crs;
-    randMatrix(crs, numInstance, rank, degree, ctxt_modulus);
+    // initiate CRS for MLWE and LWE
+    ringMatrix mlwe_crs;
+    matrix lwe_crs(numInstance * degree, vector<int64_t>(rank * degree));
+
+    randMatrix(mlwe_crs, numInstance, rank, degree, ctxt_modulus); // move to setup
 
     this -> degree = degree;
     this -> rank = rank;
-    this -> crs = crs;
+    this -> mlwe_crs = mlwe_crs;
+    this -> lwe_crs = lwe_crs;
 
     print();
 }
 
 
-void mlwe_parameter::print()
+void parameter::print()
 {
     cout << "   - degree: " << degree << endl;
     cout << "   - rank: " << rank << endl;
     cout << "   - number of instances: " << numInstance << endl;
-    cout << "   - MLWE CRS size: " << crs.size() << " * " << crs[0].size() << endl;
+    cout << "   - MLWE CRS size: " << mlwe_crs.size() << " * " << mlwe_crs[0].size() << endl;
+    cout << "   - PIR CRS size: " << lwe_crs.size() << " * " << lwe_crs[0].size() << endl;
 }
 
 
-pir_parameter::pir_parameter(database& db)
-{
-    matrix ref_db = db.getDB();
+// pir_parameter::pir_parameter(database& db)
+// {
+//     matrix ref_db = db.getDB();
 
-    crs.resize(ref_db.size());
-    for(int i = 0; i < crs.size(); i++)
-    {
-        crs[i].resize(ref_db[i].size());
-    }
-}
+//     crs.resize(ref_db.size());
+//     for(int i = 0; i < crs.size(); i++)
+//     {
+//         crs[i].resize(ref_db[i].size());
+//     }
+// }
 
-
-void pir_parameter::print()
-{
-    // cout << "   - ctxt modulus: " << ctxt_modulus << endl;
-    cout << "   - PIR CRS size: " << crs.size() << " * " << crs[0].size() << endl;
-}

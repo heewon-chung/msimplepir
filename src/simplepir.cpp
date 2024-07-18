@@ -1,12 +1,12 @@
 #include "simplepir.h"
 
-void MLWEtoLWE(const mlwe_parameter& mlwe_param, pir_parameter& pir_param)
+void MLWEtoLWE(parameter& param)
 {
-    int rank = mlwe_param.getRank();
-    int degree = mlwe_param.getDegree();
-    int numInstance = mlwe_param.getNumInstance();
-    uint64_t ctxt_modulus = mlwe_param.getCtxtModulus();
-    ringMatrix mlwe_crs = mlwe_param.getCRS();
+    int rank = param.getRank();
+    int degree = param.getDegree();
+    int numInstance = param.getNumInstance();
+    uint64_t ctxt_modulus = param.getCtxtModulus();
+    ringMatrix mlwe_crs = param.getCRSforMLWE();
 
     assert(mlwe_crs.size() == numInstance);
 
@@ -14,7 +14,7 @@ void MLWEtoLWE(const mlwe_parameter& mlwe_param, pir_parameter& pir_param)
     int numCol = rank * degree;
     int rowIdx = 0;
 
-    matrix crs(numRow, vector<int64_t>(numCol));
+    matrix lwe_crs(numRow, vector<int64_t>(numCol));
 
     for(int i = 0; i < numInstance; ++i)
     {
@@ -27,7 +27,7 @@ void MLWEtoLWE(const mlwe_parameter& mlwe_param, pir_parameter& pir_param)
                 int colIdx = j * degree + k;
                 for(int deg = 0; deg < degree; ++deg)
                 {
-                    crs[rowIdx + deg][colIdx] = tmp[deg];
+                    lwe_crs[rowIdx + deg][colIdx] = tmp[deg];
                 }
                 std::rotate(tmp.rbegin(), tmp.rbegin() + 1, tmp.rend());
                 tmp[0] = ctxt_modulus - tmp[0];
@@ -35,27 +35,27 @@ void MLWEtoLWE(const mlwe_parameter& mlwe_param, pir_parameter& pir_param)
         }
     }
 
-    pir_param.setCRS(crs);
+    param.setCRSforLWE(lwe_crs);
 
 }
 
 
-void setup(const mlwe_parameter& mlwe_param, pir_parameter& pir_param, const database& db, matrix& hint_client)
+void setup(parameter& param, const database& db, matrix& hint_client)
 {
     int db_col = db.getNumCol();
-    int degree = mlwe_param.getDegree();
-    uint64_t ctxtModulus = mlwe_param.getCtxtModulus();
+    int degree = param.getDegree();
+    uint64_t ctxtModulus = param.getCtxtModulus();
 
-    MLWEtoLWE(mlwe_param, pir_param);
-    matrix pir_crs = pir_param.getCRS();
+    MLWEtoLWE(param);
+    matrix lwe_crs = param.getCRSforLWE();
 
 #if __DEBUG == 1
     cout << "=== PIR CRS ===" << endl;
-    printMatrix(pir_crs);
+    printMatrix(lwe_crs);
 #endif
 
     // hint_client = DB * CRS
-    matrixMultiply(db.getDB(), pir_crs, ctxtModulus, hint_client);
+    matrixMultiply(db.getDB(), lwe_crs, ctxtModulus, hint_client);
 
 #if __DEBUG == 1
     cout << "=== Hint ===" << endl;
@@ -63,17 +63,17 @@ void setup(const mlwe_parameter& mlwe_param, pir_parameter& pir_param, const dat
 #endif
 }
 
-void query(const mlwe_parameter& mlwe_param, const pir_parameter& pir_param, const int col, vector<poly>& qry, vector<poly>& sk)
+void query(const parameter& param, const int col, vector<poly>& qry, vector<poly>& sk)
 {
     random_device rd;
     mt19937 gen(rd());
     uniform_int_distribution<uint64_t> error_distribution(0, 3); // Use uint64_t for distribution range
     
-    int rank = mlwe_param.getRank();
-    int degree = mlwe_param.getDegree();
-    int numInstance = mlwe_param.getNumInstance();
-    uint64_t ctxt_modulus = mlwe_param.getCtxtModulus();
-    ringMatrix mlwe_crs = mlwe_param.getCRS();
+    int rank = param.getRank();
+    int degree = param.getDegree();
+    int numInstance = param.getNumInstance();
+    uint64_t ctxt_modulus = param.getCtxtModulus();
+    ringMatrix mlwe_crs = param.getCRSforMLWE();
 
     assert(mlwe_crs.size() == numInstance);
     assert(mlwe_crs[0].size() == rank);
@@ -112,9 +112,9 @@ void query(const mlwe_parameter& mlwe_param, const pir_parameter& pir_param, con
 }
 
 
-void query(const pir_parameter& pir_param, const int qryCol, vector<int64_t> qry, int64_t ctxt_modulus)
+void query(const parameter& param, const int qryCol, vector<int64_t> qry, int64_t ctxt_modulus)
 {
-    matrix crs = pir_param.getCRS();
+    matrix crs = param.getCRSforLWE();
     int numRow = crs.size();
     int numCol = crs[0].size();
     qry.resize(numRow);
@@ -135,7 +135,7 @@ void query(const pir_parameter& pir_param, const int qryCol, vector<int64_t> qry
 }
 
 
-void answer(const mlwe_parameter& mlwe_param, const pir_parameter& pir_param, const database& db, const vector<poly>& qry, vector<int64_t>& ans)
+void answer(const parameter& param, const database& db, const vector<poly>& qry, vector<int64_t>& ans)
 {
     assert(qry.size() * qry[0].size() == db.getNumCol());
     vector<int64_t> qryLWE;
@@ -147,12 +147,12 @@ void answer(const mlwe_parameter& mlwe_param, const pir_parameter& pir_param, co
         qryLWE.insert(qryLWE.end(), poly.begin(), poly.end());
     }
 
-    matrixMultiply(db.getDB(), qryLWE, mlwe_param.getCtxtModulus(), ans);
+    matrixMultiply(db.getDB(), qryLWE, param.getCtxtModulus(), ans);
 }
 
-void recover(const mlwe_parameter& mlwe_param, const vector<int64_t>& ans, const matrix& hint_client, const vector<poly>& sk, const int qryRow, int64_t& res)
+void recover(const parameter& param, const vector<int64_t>& ans, const matrix& hint_client, const vector<poly>& sk, const int qryRow, int64_t& res)
 {
-    uint64_t ctxt_modulus = mlwe_param.getCtxtModulus();
+    uint64_t ctxt_modulus = param.getCtxtModulus();
     res = ans[qryRow];
 
     int idx = 0;
@@ -160,7 +160,7 @@ void recover(const mlwe_parameter& mlwe_param, const vector<int64_t>& ans, const
 
     for(const auto& poly : sk)
     {
-        assert(poly.size() == mlwe_param.getDegree());
+        assert(poly.size() == param.getDegree());
         for(const auto& element : poly)
         {
             tmp += hint_client[qryRow][idx] * element;

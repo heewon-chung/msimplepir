@@ -38,43 +38,42 @@ int main()
     // pir_param.print();
 #endif
 
-    mlwe_parameter mlwe_param(db, degree, rank);
-    pir_parameter pir_param;
+    parameter param(db, degree, rank);
     matrix hint_client;
 
     cout << "\n Executing Private Information Retrieval" << endl;
     cout << "   - [Server] preprocessing......\t";
     start = get_time();
-    setup(mlwe_param, pir_param, db, hint_client);
+    setup(param, db, hint_client);
     end = get_time();
     total_time = end - start;
     printf("%LF microseconds\n", total_time);
-    assert(hint_client.size() == mlwe_param.getDegree() * mlwe_param.getNumInstance());
-    assert(hint_client[0].size() == mlwe_param.getDegree() * mlwe_param.getRank());
+    assert(hint_client.size() == param.getDegree() * param.getNumInstance());
+    assert(hint_client[0].size() == param.getDegree() * param.getRank());
 
     vector<poly> qry, sk;
     cout << "   - [Client] generating query......\t";
     start = get_time();
-    query(mlwe_param, pir_param, qryCol, qry, sk);
+    query(param, qryCol, qry, sk);
     end = get_time(); 
     qry_time = end - start;
     printf("%LF microseconds\n", qry_time);
-    assert(qry.size() == mlwe_param.getNumInstance());
-    assert(qry[0].size() == mlwe_param.getDegree());
+    assert(qry.size() == param.getNumInstance());
+    assert(qry[0].size() == param.getDegree());
 
     cout << "   - [Server] answer the query......\t";
     vector<int64_t> ans;
     start = get_time(); 
-    answer(mlwe_param, pir_param, db, qry, ans);
+    answer(param, db, qry, ans);
     end = get_time();
     total_time = end - start;
     printf("%LF microseconds\n", total_time); 
-    assert(ans.size() == mlwe_param.getDegree() * mlwe_param.getNumInstance());
+    assert(ans.size() == param.getDegree() * param.getNumInstance());
 
     cout << "   - [Client] recover the data......\t";
     int64_t res;
     start = get_time();
-    recover(mlwe_param, ans, hint_client, sk, qryRow, res);
+    recover(param, ans, hint_client, sk, qryRow, res);
     end = get_time();
     total_time = end - start;
     printf("%LF microseconds\n", total_time);
@@ -84,15 +83,15 @@ int main()
 
     vector<int64_t> qry_lwe;
     start = get_time();
-    query(pir_param, qryCol, qry_lwe, mlwe_param.getCtxtModulus());
+    query(param, qryCol, qry_lwe, param.getCtxtModulus());
     end = get_time();
     total_time = end - start;
     printf("\n\tCompared to LWE-based query, we can save %Lf %%", qry_time / total_time * 100);
 
 #if __DEBUG == 3
     poly tmp1, tmp2;
-    int64_t ctxt_modulus = mlwe_param.getCtxtModulus();
-    int numInstance = mlwe_param.getNumInstance();
+    int64_t ctxt_modulus = param.getCtxtModulus();
+    int numInstance = param.getNumInstance();
 
     printf("\nCheck query ciphertexts\n");
     for(int i = 0; i < numInstance; i++)
@@ -100,7 +99,7 @@ int main()
         tmp1 = qry[i];
         for(int j = 0; j < sk.size(); j++)
         {
-            multiply_ntt(mlwe_param.getCRS()[i][j], sk[j], tmp2, ctxt_modulus, 3);
+            multiply_ntt(param.getCRSforMLWE()[i][j], sk[j], tmp2, ctxt_modulus, 3);
             for(int k = 0; k < degree; k++)
             {
                 tmp1[k] = tmp1[k] - tmp2[k];
