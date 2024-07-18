@@ -89,13 +89,13 @@ int main()
 
     // transform ntt form
     size_t n = 1;
-    while(n < input1.size() + input2.size())
+    while(n < 2 * degree)
         n <<= 1;
     ntt_input1 = poly(input1.begin(), input1.end());
     ntt_input2 = poly(input2.begin(), input2.end());
     ntt_input1.resize(n);
     ntt_input2.resize(n);
-    
+
     ntt(ntt_input1, mod, primitive_root);
     ntt(ntt_input2, mod, primitive_root);
 

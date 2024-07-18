@@ -31,9 +31,7 @@ bool isProbablePrime(uint64_t n, int k);
 void generatePrime(uint64_t& prime, int n);
 
 int64_t modExp(int64_t base, int64_t exp, int64_t mod);
-// void bitReverseCopy(const vector<uint64_t>& src, vector<uint64_t>& dest);
 void ntt(poly& a, const uint64_t modulus, const int64_t root, bool invert = false);
-// void multiply_ntt(const poly& src1, const poly& src2, poly& dest, const uint64_t modulus, const int64_t root);
 void multiply_ntt(const poly& src1, const poly &src2, poly& dest, const uint64_t modulus, const uint64_t root, bool is_ntt_form = false);
 void invert_ntt(const poly& src, poly& dest, const uint64_t modulus, const int64_t root);
 

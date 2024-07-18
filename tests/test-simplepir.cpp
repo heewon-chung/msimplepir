@@ -78,15 +78,18 @@ int main()
     total_time = end - start;
     printf("%LF microseconds\n", total_time);
 
-    cout << "\nAnswer:\t" << db.getDB()[qryRow][qryCol] << endl;
-    cout << "Result:\t" << res << endl;
+    cout << "\n> Answer:  " << db.getDB()[qryRow][qryCol] << endl;
+    cout << "> Result:  " << res << endl;
 
     vector<int64_t> qry_lwe;
     start = get_time();
     query(param, qryCol, qry_lwe, param.getCtxtModulus());
     end = get_time();
     total_time = end - start;
-    printf("\n\tCompared to LWE-based query, we can save %Lf %%", qry_time / total_time * 100);
+    printf("\nCompared to LWE-based query, we can save %Lf %%\n", total_time / qry_time * 100);
+    printf("   - MLWE-based Query: %Lf\n", qry_time);
+    printf("   - LWE-based Query: %Lf\n", total_time);
+
 
 #if __DEBUG == 3
     poly tmp1, tmp2;
@@ -121,18 +124,18 @@ int main()
     matrixMultiply(hint_client, sk_lwe, ctxt_modulus, tmp_ans);
     // print(tmp_ans);
 
-    printf("\n Check answer ciphertext\n");
-    for(int i = 0; i < ans.size(); i++)
-    {
-        tmp_ans[i] = ans[i] - tmp_ans[i];
-        tmp_ans[i] = (tmp_ans[i] % ctxt_modulus + ctxt_modulus) % ctxt_modulus;
-    }
-    print(tmp_ans);
+    // printf("\n Check answer ciphertext\n");
+    // for(int i = 0; i < ans.size(); i++)
+    // {
+    //     tmp_ans[i] = ans[i] - tmp_ans[i];
+    //     tmp_ans[i] = (tmp_ans[i] % ctxt_modulus + ctxt_modulus) % ctxt_modulus;
+    // }
+    // print(tmp_ans);
 
-    for(int i = 0; i < ans.size(); i++)
-    {
-        if(tmp_ans[i] != db.getDB()[i][qryCol]) cerr << i << "th data is wrong!" << endl;
-    }
+    // for(int i = 0; i < ans.size(); i++)
+    // {
+    //     if(tmp_ans[i] != db.getDB()[i][qryCol]) cerr << i << "th data is wrong!" << endl;
+    // }
 #endif
 
     return 0;

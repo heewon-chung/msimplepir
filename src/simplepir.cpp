@@ -52,20 +52,9 @@ void setup(parameter& param, const database& db, matrix& hint_client)
     uint64_t ctxtModulus = param.getCtxtModulus();
 
     MLWEtoLWE(param);
-    matrix lwe_crs = param.getCRSforLWE();
-
-#if __DEBUG == 1
-    cout << "=== PIR CRS ===" << endl;
-    printMatrix(lwe_crs);
-#endif
-
     // hint_client = DB * CRS
-    matrixMultiply(db.getDB(), lwe_crs, ctxtModulus, hint_client);
+    matrixMultiply(db.getDB(), param.getCRSforLWE(), ctxtModulus, hint_client);
 
-#if __DEBUG == 1
-    cout << "=== Hint ===" << endl;
-    printMatrix(hint_client);
-#endif
 }
 
 void query(const parameter& param, const int col, vector<poly>& qry, vector<poly>& sk)
@@ -78,7 +67,8 @@ void query(const parameter& param, const int col, vector<poly>& qry, vector<poly
     int degree = param.getDegree();
     int numInstance = param.getNumInstance();
     uint64_t ctxt_modulus = param.getCtxtModulus();
-    ringMatrix mlwe_crs = param.getCRSforMLWE();
+    int root = param.getRoot();
+    const ringMatrix& mlwe_crs = param.getCRSforMLWE();
 
     assert(mlwe_crs.size() == numInstance);
     assert(mlwe_crs[0].size() == rank);
@@ -87,33 +77,43 @@ void query(const parameter& param, const int col, vector<poly>& qry, vector<poly
     int pos = col % degree;
     
     sk.resize(rank);
-    // #pragma omp parallel for
+    vector<poly> sk_ntt(rank);
+
+    // Generate random vectors and compute their NTT in parallel
+    #pragma omp parallel for
     for(int j = 0; j < rank; j++)
     {
-        randVector(sk[j], degree, ctxt_modulus);
+        randVector(sk[j], degree, ctxt_modulus); // TODO sample ternary for the efficient
+        sk_ntt[j] = poly(sk[j].begin(), sk[j].end());
+        sk_ntt[j].resize(2 * degree);
+        ntt(sk_ntt[j], ctxt_modulus, root);
     }
 
-    // mlwe_crs * sk
+    // Initialize qry
     qry.resize(numInstance, poly(degree, 0));
-    // #pragma omp parallel for
+
+    // Perform matrix-vector multiplication in parallel
+    #pragma omp parallel for
     for(int i = 0; i < numInstance; ++i)
     {
-        poly tmp(degree);
+        vector<poly> tmp(rank, poly(2 * degree));
+        // Compute NTT of mlwe_crs rows
         for(int j = 0; j < rank; ++j)
         {
-            // Multiply mlwe_crs[i][j] with sk[j] using NTT
-            multiply_ntt(mlwe_crs[i][j], sk[j], tmp, ctxt_modulus, 3);
+            tmp[j] = poly(mlwe_crs[i][j].begin(), mlwe_crs[i][j].end());
+            tmp[j].resize(2 * degree);
+            ntt(tmp[j], ctxt_modulus, root);
+            multiply_ntt(tmp[j], sk_ntt[j], tmp[j], ctxt_modulus, root, true);
             // Add tmp to qry[i] and ensure results are within modulus
             for(int k = 0; k < degree; ++k)
             {
-                // #pragma omp atomic
-                qry[i][k] = (qry[i][k] + tmp[k]) % ctxt_modulus;
+                #pragma omp atomic
+                qry[i][k] = (qry[i][k] + tmp[j][k]) % ctxt_modulus;
             }
         }
     }
 
-    qry[blk][pos]++;
-
+    qry[blk][pos] = (qry[blk][pos] + param.getScale()) % ctxt_modulus;
 }
 
 
@@ -175,6 +175,7 @@ void recover(const parameter& param, const vector<int64_t>& ans, const matrix& h
     }
     res = (res - tmp) % ctxt_modulus;
     res = (res + ctxt_modulus) % ctxt_modulus;
+    res /= param.getScale();
 
     assert(idx == static_cast<int>(sk.size() * sk[0].size()));
 }

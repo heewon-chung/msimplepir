@@ -32,7 +32,7 @@ parameter::parameter(const database& db, const int degree, const int rank)
     numInstance = numRow / degree;
 
     // initiate CRS for MLWE and LWE
-    ringMatrix mlwe_crs(numInstance, vector<poly>(degree));
+    ringMatrix mlwe_crs(numInstance, vector<poly>(rank));
     matrix lwe_crs(numInstance * degree, vector<int64_t>(rank * degree));
 
     this -> degree = degree;
