@@ -29,6 +29,7 @@ void print(const poly vector);
 
 bool isProbablePrime(uint64_t n, int k);
 void generatePrime(uint64_t& prime, int n);
+int generateDiscreteGaussian(int mean, double stddev);
 
 int64_t modExp(int64_t base, int64_t exp, int64_t mod);
 void ntt(poly& a, const uint64_t modulus, const int64_t root, bool invert = false);

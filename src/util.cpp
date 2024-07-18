@@ -323,31 +323,6 @@ void ntt(poly& a, const uint64_t modulus, const int64_t root, bool invert)
     }
 }
 
-
-// void multiply_ntt(const poly& src1, const poly &src2, poly& dest, const uint64_t modulus, const int64_t root) 
-// {
-//     size_t n = 1;
-//     while (n < src1.size() + src2.size())    
-//         n <<= 1;
-//     poly fa(src1.begin(), src1.end()), fb(src2.begin(), src2.end());
-//     fa.resize(n);
-//     fb.resize(n);
-
-//     ntt(fa, modulus, root, false);
-//     ntt(fb, modulus, root, false);
-//     for (size_t i = 0; i < n; ++i) 
-//     {
-//         fa[i] = (fa[i] * fb[i]) % modulus;
-//     }
-
-//     ntt(fa, modulus, root, true);
-//     dest.resize(n / 2);
-//     for (size_t i = 0; i < n / 2; ++i) 
-//     {
-//         dest[i] = (fa[i] + modulus - (i + n / 2 < fa.size() ? fa[i + n / 2] : 0)) % modulus;
-//     }
-// }
-
 void multiply_ntt(const poly& src1, const poly &src2, poly& dest, const uint64_t modulus, const uint64_t root, bool is_ntt_form) 
 {
     size_t n;
@@ -386,7 +361,6 @@ void multiply_ntt(const poly& src1, const poly &src2, poly& dest, const uint64_t
 }
 
 
-
 void invert_ntt(const poly& src, poly& dest, const uint64_t modulus, const int64_t root)
 {
     int n = src.size();
@@ -399,4 +373,13 @@ void invert_ntt(const poly& src, poly& dest, const uint64_t modulus, const int64
     {
         dest[i] = (tmp[i] + modulus - (i + dest.size() < tmp.size() ? tmp[i + dest.size()] : 0)) % modulus;
     }
+}
+
+int generateDiscreteGaussian(int mean, double stddev) 
+{
+    random_device rd;
+    mt19937 generator(rd());
+    normal_distribution<> distribution(mean, stddev);
+
+    return round(distribution(generator));
 }
