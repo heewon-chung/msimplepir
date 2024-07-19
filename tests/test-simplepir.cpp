@@ -9,7 +9,7 @@ long double get_time()
 {
     struct timespec t;
     clock_gettime(CLOCK_MONOTONIC, &t);
-    return t.tv_sec * 1000000L + t.tv_nsec / 1000;  // Convert seconds to microseconds
+    return t.tv_sec * 1000L + t.tv_nsec / 1000000.0;  // Convert seconds to milliseconds
 }
 
 int main()
@@ -17,8 +17,9 @@ int main()
     int numRow = 1024;
     int numCol = 1024;
 
-    int degree = 32;
-    int rank = 3;
+    // degree * rank = 1024
+    int degree = 256;
+    int rank = 1024 / degree;
 
     database db(numRow, numCol);
     
@@ -41,7 +42,7 @@ int main()
     setup(param, db, hint_client);
     end = get_time();
     total_time = end - start;
-    printf("%LF microseconds\n", total_time);
+    printf("%LF miliseconds\n", total_time);
     assert(hint_client.size() == param.getDegree() * param.getNumInstance());
     assert(hint_client[0].size() == param.getDegree() * param.getRank());
 
@@ -51,7 +52,7 @@ int main()
     query(param, qryCol, qry, sk);
     end = get_time(); 
     qry_time = end - start;
-    printf("%LF microseconds\n", qry_time);
+    printf("%LF miliseconds\n", qry_time);
     assert(qry.size() == param.getNumInstance());
     assert(qry[0].size() == param.getDegree());
 
@@ -61,7 +62,7 @@ int main()
     answer(param, db, qry, ans);
     end = get_time();
     total_time = end - start;
-    printf("%LF microseconds\n", total_time); 
+    printf("%LF miliseconds\n", total_time); 
     assert(ans.size() == param.getDegree() * param.getNumInstance());
 
     cout << "   - [Client] recover the data......\t";
@@ -70,7 +71,7 @@ int main()
     recover(param, ans, hint_client, sk, qryRow, res);
     end = get_time();
     total_time = end - start;
-    printf("%LF microseconds\n", total_time);
+    printf("%LF miliseconds\n", total_time);
 
     cout << "\n> Answer:  " << db.getDB()[qryRow][qryCol] << endl;
     cout << "> Result:  " << res << endl;
@@ -80,7 +81,7 @@ int main()
     query(param, qryCol, qry_lwe, param.getCtxtModulus());
     end = get_time();
     total_time = end - start;
-    printf("\nCompared to LWE-based query, we can save %Lf %%\n", total_time / qry_time * 100);
+    printf("\nOur query algorithm is *%Lf faster than that of SimplePIR.\n", total_time / qry_time);
     printf("   - MLWE-based Query: %Lf\n", qry_time);
     printf("   - LWE-based Query: %Lf\n", total_time);
 
