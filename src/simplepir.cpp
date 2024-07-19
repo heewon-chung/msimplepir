@@ -18,6 +18,7 @@ void MLWEtoLWE(parameter& param)
 
     matrix lwe_crs(numRow, vector<int64_t>(numCol));
 
+    #pragma omp parallel for
     for(int i = 0; i < numInstance; ++i)
     {
         int rowIdx = i * degree;
@@ -108,7 +109,7 @@ void query(const parameter& param, const int col, vector<poly>& qry, vector<poly
             }
         }
     }
-
+    
     qry[blk][pos] = (qry[blk][pos] + param.getScale()) % ctxt_modulus;
 }
 
