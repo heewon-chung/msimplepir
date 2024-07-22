@@ -2,10 +2,10 @@
 
 #include "database.h"
 #include "simplepir.h"
+#include "omp.h"
 
 #define __DEBUG 0
-#define PARAMETER 1
-
+#define _PARAMETER 1
 
 long double get_time() 
 {
@@ -16,37 +16,34 @@ long double get_time()
 
 int main()
 {
-#if PARAMETER == 1
+#if _PARAMETER == 1
     int numRow = 8192;
     int numCol = 8192;
-#elif PARAMETER == 2
+#elif _PARAMETER == 2
     int numRow = 16384;
     int numCol = 16384;
-#elif PARAMETER == 3
+#elif _PARAMETER == 3
     int numRow = 32768;
     int numCol = 32768;
-#elif PARAMETER == 4
+#elif _PARAMETER == 4
     int numRow = 131072;
     int numCol = 131072;
-#elif PARAMETER == 5
+#elif _PARAMETER == 5
     int numRow = 524288;
     int numCol = 524288;
-#elif PARAMETER == 6
+#elif _PARAMETER == 6
     int numRow = 2097152;
     int numCol = 2097152;
+#elif _PARAMETER == 0
+    int numRow = 2048;
+    int numCol = 2048;
 #endif
 
     // degree * rank = 1024
-    int degree = 256;
+    int degree = 512;
     int rank = 1024 / degree;
 
     database db(numRow, numCol);
-    
-#if __DEBUG == 1
-    cout << "=== Database ===" << endl;
-    print(db.getDB());
-#endif
-
     int qryRow = 1;
     int qryCol = 1;
 

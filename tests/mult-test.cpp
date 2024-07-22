@@ -11,8 +11,8 @@ using namespace std;
 
 int main()
 {
-    int numRow = 3;
-    int numCol = 4;
+    int numRow = 1024;
+    int numCol = 1024;
     int numInstance = 5;
 
     int qryCol = 1;
@@ -29,7 +29,7 @@ int main()
     qry[qryCol]++;
 
     matrixMultiply(db.getDB(), qry, ptxt_modulus, res);
-    cout << "Plaintext Multiplication:\t"; print(res);
+    // cout << "Plaintext Multiplication:\t"; print(res);
 
 
     // A: numCol * numInstance
@@ -60,6 +60,7 @@ int main()
         multCtxt[i] = (multCtxt[i] % ctxt_modulus + ctxt_modulus) % ctxt_modulus;
         multCtxt[i] %= ptxt_modulus;
     }
+
 
     cout << "Ciphertext Multiplication:\t"; print(multCtxt);
 }
