@@ -1,29 +1,23 @@
-#[[
-@file   CMakeLists.txt
-@brief  a test executable 
+# #[[
 
-]]
+# @file   CMakeLists.txt
+# @brief  a test executable 
 
-#################################
-# make executables for test.cpp #
-#################################
+# ]]
 
-add_executable(SIMPLEPIR-test test-simplepir.cpp)
-target_compile_options(SIMPLEPIR-test PRIVATE -std=c++11 -O3)
-target_link_libraries(SIMPLEPIR-test PRIVATE simplepir)
+file(GLOB_RECURSE TEST_FILES "*.cpp")
 
-add_executable(NTT-test test-ntt.cpp)
-target_compile_options(NTT-test PRIVATE -std=c++11 -O3)
-target_link_libraries(NTT-test PRIVATE simplepir)
-
-add_executable(MLWEtoLWE-test test-mlwe2lwe.cpp)
-target_compile_options(MLWEtoLWE-test PRIVATE -std=c++11 -O3)
-target_link_libraries(MLWEtoLWE-test PRIVATE simplepir)
-
-add_executable(MLWE-test test-mlwe.cpp)
-target_compile_options(MLWE-test PRIVATE -std=c++11 -O3)
-target_link_libraries(MLWE-test PRIVATE simplepir)
-
-add_executable(mult-test test-mult.cpp)
-target_compile_options(mult-test PRIVATE -std=c++11 -O3)
-target_link_libraries(mult-test PRIVATE simplepir)
+# Add test executables
+foreach(test_file ${TEST_FILES})
+    get_filename_component(test_name ${test_file} NAME_WE)
+    string(REPLACE "-test" "" test_name ${test_name}) 
+    add_executable(${test_name} ${test_file})
+    target_include_directories(${test_name} PUBLIC ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/tests)
+    if(APPLE)
+        target_link_libraries(${test_name} PRIVATE "/opt/homebrew/opt/libomp/lib/libomp.dylib" ${PROJECT_NAME})
+    else()
+        target_link_libraries(${test_name} PRIVATE OpenMP::OpenMP_CXX ${PROJECT_NAME})
+    endif()
+    target_compile_options(${test_name} PRIVATE -Wall -Wpedantic -O0)
+    add_test(NAME ${test_name} COMMAND ${test_name})
+endforeach()
