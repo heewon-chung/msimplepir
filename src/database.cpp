@@ -38,7 +38,7 @@ void database::randDB()
     }
 }
 
-void database::print()
+void database::print() const
 {
     cout << "   - DB size: " << numRow << " * " << numCol << endl;
 }

@@ -30,7 +30,7 @@ public:
     void setElem(int row, int col, int val) {db[row][col] = val;}    
     int getElem(int row, int col) {return db[row][col];}
 
-    void print();
+    void print() const;
 
 };
 #endif
