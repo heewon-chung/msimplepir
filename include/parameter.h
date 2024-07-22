@@ -40,7 +40,7 @@ public:
     uint64_t getCtxtModulus() const {return ctxt_modulus;}
     uint64_t getScale() const {return scale;}
 
-    void print();
+    void print() const;
 };
 
 

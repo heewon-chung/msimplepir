@@ -42,11 +42,12 @@ parameter::parameter(const database& db, const int degree, const int rank)
     this -> lwe_crs = lwe_crs;
 
     printf("\nParameter Set\n");
+    db.print();
     print();
 }
 
 
-void parameter::print()
+void parameter::print() const
 {
     cout << "   - degree: " << degree << endl;
     cout << "   - rank: " << rank << endl;
