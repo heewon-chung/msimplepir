@@ -105,11 +105,15 @@ void query(const parameter& param, const int col, vector<poly>& qry, vector<poly
             for(int k = 0; k < degree; ++k)
             {
                 #pragma omp atomic
-                qry[i][k] = (qry[i][k] + tmp[j][k] + generateDiscreteGaussian(0, 6.4)) % ctxt_modulus;
+                qry[i][k] = (qry[i][k] + tmp[j][k]) % ctxt_modulus;
             }
         }
+
+        for(int k = 0; k < degree; ++k)
+        {
+            qry[i][k] = (qry[i][k] + generateDiscreteGaussian(0, 6.4)) % ctxt_modulus;
+        }
     }
-    
     qry[blk][pos] = (qry[blk][pos] + param.getScale()) % ctxt_modulus;
 }
 
@@ -131,13 +135,12 @@ void query(const parameter& param, const int qryCol, vector<int64_t>& qry, int64
         int64_t sum = 0;
         for (int j = 0; j < numCol; j++)
         {
-            // mean 0 & stddev 6.4
-            sum += crs[i][j] * sk_lwe[j] + generateDiscreteGaussian(0, 6.4);
+            sum += crs[i][j] * sk_lwe[j];
         }
+        // mean 0 & stddev 6.4
         #pragma omp atomic
-        qry[i] = (sum % ctxt_modulus + ctxt_modulus) % ctxt_modulus;
+        qry[i] = (sum % ctxt_modulus + ctxt_modulus + generateDiscreteGaussian(0, 6.4)) % ctxt_modulus;
     }
-
     qry[qryCol] = (qry[qryCol] + scale) % ctxt_modulus;
 }
 
