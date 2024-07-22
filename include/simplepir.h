@@ -4,6 +4,7 @@
 
 #include "parameter.h"
 #include "database.h"
+#include "omp.h"
 
 void MLWEtoLWE(parameter& param);
 void setup(parameter& param, const database& db, matrix& hint_client);

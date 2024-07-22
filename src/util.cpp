@@ -113,7 +113,8 @@ void matrixMultiply(const matrix& matrix1, const matrix& matrix2, const uint64_t
     int numCols2 = matrix2[0].size();
 
     // Check if matrices are compatible for multiplication
-    if (numCols1 != numRows2) {
+    if (numCols1 != numRows2) 
+    {
         cerr << "Error: Incompatible matrix dimensions for multiplication." << endl;
         cerr << "column of matrix 1: " << numCols1 << endl;
         cerr << "row of matrix 2: " << numRows2 << endl;
@@ -122,37 +123,32 @@ void matrixMultiply(const matrix& matrix1, const matrix& matrix2, const uint64_t
 
     // Resize the result matrix
     resultMatrix.resize(numRows1, vector<int64_t>(numCols2));
-    // for (int i = 0; i < numRows1; ++i) 
-    // { 
-    //     resultMatrix[i].resize(numCols2);
-    // }
 
-    // Perform matrix multiplication over Z_q
+    // Perform matrix multiplication over Z_q using OpenMP
+    #pragma omp parallel for
     for (int i = 0; i < numRows1; ++i) 
     {
         for (int j = 0; j < numCols2; ++j) 
         {
-            resultMatrix[i][j] = 0;
+            int64_t sum = 0;
             for (int k = 0; k < numCols1; ++k) 
             {
-                // resultMatrix[i][j] = (resultMatrix[i][j] + matrix1[i][k] * matrix2[k][j]) % modulus;
-                resultMatrix[i][j] += matrix1[i][k] * matrix2[k][j];
+                sum = (sum + matrix1[i][k] * matrix2[k][j]) % modulus;
             }
-            resultMatrix[i][j] %= modulus;
+            resultMatrix[i][j] = sum;
         }
     }
 }
 
 
-void matrixMultiply(const matrix& matrix_input, const vector<int64_t>& vector_input, uint64_t modulus, vector<int64_t>& resultVector) {
+void matrixMultiply(const matrix& matrix_input, const std::vector<int64_t>& vector_input, uint64_t modulus, vector<int64_t>& resultVector) 
+{
     int numRows = matrix_input.size();
     int numCols = matrix_input[0].size();
 
     // Check if matrix and vector dimensions are compatible
     if (numCols != vector_input.size()) 
     {
-        // cerr << "Error: Incompatible matrix and vector dimensions for multiplication." << endl;
-        // exit(EXIT_FAILURE);
         cerr << "Error: Incompatible matrix and vector dimensions for multiplication." << endl;
         cerr << "column of matrix: " << numCols << endl;
         cerr << "row of vector: " << vector_input.size() << endl;
@@ -162,13 +158,16 @@ void matrixMultiply(const matrix& matrix_input, const vector<int64_t>& vector_in
     // Resize the result vector
     resultVector.resize(numRows, 0);
 
-    // Perform matrix-vector multiplication over Z_q
+    // Perform matrix-vector multiplication over Z_q using OpenMP with dynamic scheduling
+    #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < numRows; ++i) 
     {
+        int64_t sum = 0;
         for (int j = 0; j < numCols; ++j) 
         {
-            resultVector[i] = (resultVector[i] + matrix_input[i][j] * vector_input[j]) % modulus;
+            sum = (sum + matrix_input[i][j] * vector_input[j]) % modulus;
         }
+        resultVector[i] = sum;
     }
 }
 
@@ -317,7 +316,9 @@ void ntt(poly& a, const uint64_t modulus, const int64_t root, bool invert)
     if (invert) 
     {
         int64_t n_inv = modExp(n, modulus - 2, modulus);
-        for (int64_t &x : a) {
+        #pragma omp parallel for
+        for (int64_t &x : a) 
+        {
             x = (x * n_inv) % modulus;
         }
     }
@@ -347,6 +348,7 @@ void multiply_ntt(const poly& src1, const poly &src2, poly& dest, const uint64_t
         fb = src2;
     } 
 
+    #pragma omp parallel for
     for (size_t i = 0; i < n; ++i) 
     {
         fa[i] = (fa[i] * fb[i]) % modulus;
@@ -354,6 +356,7 @@ void multiply_ntt(const poly& src1, const poly &src2, poly& dest, const uint64_t
 
     ntt(fa, modulus, root, true);
     dest.resize(n / 2);
+    #pragma omp parallel for
     for (size_t i = 0; i < n / 2; ++i) 
     {
         dest[i] = (fa[i] + modulus - (i + n / 2 < fa.size() ? fa[i + n / 2] : 0)) % modulus;

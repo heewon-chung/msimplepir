@@ -8,6 +8,8 @@
 #include <cmath>
 #include <cassert>
 
+#include "omp.h"
+
 using namespace std;
 
 typedef vector<int64_t> poly;

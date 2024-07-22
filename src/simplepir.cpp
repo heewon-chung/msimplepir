@@ -104,7 +104,7 @@ void query(const parameter& param, const int col, vector<poly>& qry, vector<poly
             // Add tmp to qry[i] and ensure results are within modulus
             for(int k = 0; k < degree; ++k)
             {
-                #pragma omp atomic
+                #pragma omp critical
                 qry[i][k] = (qry[i][k] + tmp[j][k]) % ctxt_modulus;
             }
         }
@@ -138,7 +138,6 @@ void query(const parameter& param, const int qryCol, vector<int64_t>& qry, int64
             sum += crs[i][j] * sk_lwe[j];
         }
         // mean 0 & stddev 6.4
-        #pragma omp atomic
         qry[i] = (sum % ctxt_modulus + ctxt_modulus + generateDiscreteGaussian(0, 6.4)) % ctxt_modulus;
     }
     qry[qryCol] = (qry[qryCol] + scale) % ctxt_modulus;
