@@ -4,6 +4,8 @@
 #include "simplepir.h"
 
 #define __DEBUG 0
+#define PARAMETER 1
+
 
 long double get_time() 
 {
@@ -14,8 +16,25 @@ long double get_time()
 
 int main()
 {
-    int numRow = 1024;
-    int numCol = 1024;
+#if PARAMETER == 1
+    int numRow = 8192;
+    int numCol = 8192;
+#elif PARAMETER == 2
+    int numRow = 16384;
+    int numCol = 16384;
+#elif PARAMETER == 3
+    int numRow = 32768;
+    int numCol = 32768;
+#elif PARAMETER == 4
+    int numRow = 131072;
+    int numCol = 131072;
+#elif PARAMETER == 5
+    int numRow = 524288;
+    int numCol = 524288;
+#elif PARAMETER == 6
+    int numRow = 2097152;
+    int numCol = 2097152;
+#endif
 
     // degree * rank = 1024
     int degree = 256;
@@ -66,7 +85,7 @@ int main()
     assert(ans.size() == param.getDegree() * param.getNumInstance());
 
     cout << "   - [Client] recover the data......\t";
-    int64_t res;
+    int64_t res = 0;
     start = get_time();
     recover(param, ans, hint_client, sk, qryRow, res);
     end = get_time();
@@ -81,7 +100,7 @@ int main()
     query(param, qryCol, qry_lwe, param.getCtxtModulus());
     end = get_time();
     total_time = end - start;
-    printf("\nOur query algorithm is *%Lf faster than that of SimplePIR.\n", total_time / qry_time);
+    printf("\nOur query algorithm is x %Lf faster than that of SimplePIR.\n", total_time / qry_time);
     printf("   - MLWE-based Query: %Lf\n", qry_time);
     printf("   - LWE-based Query: %Lf\n", total_time);
 

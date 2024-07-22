@@ -27,7 +27,7 @@ parameter::parameter(const database& db, const int degree, const int rank)
     ctxt_modulus = 2013265921;
     root = 31;
 
-    ptxt_modulus = 1001;
+    ptxt_modulus = 991;
     scale = ctxt_modulus / ptxt_modulus;
 
     numInstance = numRow / degree;
@@ -53,4 +53,5 @@ void parameter::print()
     cout << "   - number of instances: " << numInstance << endl;
     cout << "   - MLWE CRS size: " << mlwe_crs.size() << " * " << mlwe_crs[0].size() << endl;
     cout << "   - PIR CRS size: " << lwe_crs.size() << " * " << lwe_crs[0].size() << endl;
+    cout << "   - Plaintext space: " << ptxt_modulus << endl;
 }
