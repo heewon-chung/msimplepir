@@ -32,7 +32,7 @@ void MLWEtoLWE(parameter& param)
                 {
                     lwe_crs[rowIdx + deg][colIdx] = tmp[deg];
                 }
-                std::rotate(tmp.rbegin(), tmp.rbegin() + 1, tmp.rend());
+                rotate(tmp.rbegin(), tmp.rbegin() + 1, tmp.rend());
                 tmp[0] = ctxt_modulus - tmp[0];
             }
         }
@@ -58,6 +58,65 @@ void setup(parameter& param, const database& db, matrix& hint_client)
 
 }
 
+// void query(const parameter& param, const int col, vector<poly>& qry, vector<poly>& sk)
+// {
+//     int rank = param.getRank();
+//     int degree = param.getDegree();
+//     int numInstance = param.getNumInstance();
+//     uint64_t ctxt_modulus = param.getCtxtModulus();
+//     int root = param.getRoot();
+//     const ringMatrix& mlwe_crs = param.getCRSforMLWE();
+
+//     assert(mlwe_crs.size() == numInstance);
+//     assert(mlwe_crs[0].size() == rank);
+    
+//     int blk = col / degree;
+//     int pos = col % degree;
+    
+//     sk.resize(rank);
+//     vector<poly> sk_ntt(rank);
+
+//     // Generate random vectors and compute their NTT in parallel
+//     #pragma omp parallel for
+//     for(int j = 0; j < rank; j++)
+//     {
+//         randVector(sk[j], degree, ctxt_modulus); // TODO sample ternary for the efficient
+//         sk_ntt[j] = poly(sk[j].begin(), sk[j].end());
+//         sk_ntt[j].resize(2 * degree);
+//         ntt(sk_ntt[j], ctxt_modulus, root);
+//     }
+
+//     // Initialize qry
+//     qry.resize(numInstance, poly(degree, 0));
+
+//     // Perform matrix-vector multiplication in parallel
+//     // #pragma omp parallel for
+//     for(int i = 0; i < numInstance; ++i)
+//     {
+//         vector<poly> tmp(rank, poly(2 * degree));
+//         // Compute NTT of mlwe_crs rows
+//         for(int j = 0; j < rank; ++j)
+//         {
+//             tmp[j] = poly(mlwe_crs[i][j].begin(), mlwe_crs[i][j].end());
+//             tmp[j].resize(2 * degree);
+//             ntt(tmp[j], ctxt_modulus, root);
+//             multiply_ntt(tmp[j], sk_ntt[j], tmp[j], ctxt_modulus, root, true);
+//             // Add tmp to qry[i] and ensure results are within modulus
+//             for(int k = 0; k < degree; ++k)
+//             {
+//                 #pragma omp critical
+//                 qry[i][k] = (qry[i][k] + tmp[j][k]) % ctxt_modulus;
+//             }
+//         }
+
+//         for(int k = 0; k < degree; ++k)
+//         {
+//             qry[i][k] = (qry[i][k] + generateDiscreteGaussian(0, 6.4)) % ctxt_modulus;
+//         }
+//     }
+//     qry[blk][pos] = (qry[blk][pos] + param.getScale()) % ctxt_modulus;
+// }
+
 void query(const parameter& param, const int col, vector<poly>& qry, vector<poly>& sk)
 {
     int rank = param.getRank();
@@ -69,16 +128,16 @@ void query(const parameter& param, const int col, vector<poly>& qry, vector<poly
 
     assert(mlwe_crs.size() == numInstance);
     assert(mlwe_crs[0].size() == rank);
-    
+
     int blk = col / degree;
     int pos = col % degree;
-    
+
     sk.resize(rank);
     vector<poly> sk_ntt(rank);
 
     // Generate random vectors and compute their NTT in parallel
     #pragma omp parallel for
-    for(int j = 0; j < rank; j++)
+    for (int j = 0; j < rank; j++)
     {
         randVector(sk[j], degree, ctxt_modulus); // TODO sample ternary for the efficient
         sk_ntt[j] = poly(sk[j].begin(), sk[j].end());
@@ -89,31 +148,42 @@ void query(const parameter& param, const int col, vector<poly>& qry, vector<poly
     // Initialize qry
     qry.resize(numInstance, poly(degree, 0));
 
+    // Precompute NTT of mlwe_crs rows and store in a temporary structure
+    vector<vector<poly>> tmp_ntt(numInstance, vector<poly>(rank, poly(2 * degree)));
+    #pragma omp parallel for collapse(2)
+    for (int i = 0; i < numInstance; ++i)
+    {
+        for (int j = 0; j < rank; ++j)
+        {
+            tmp_ntt[i][j] = poly(mlwe_crs[i][j].begin(), mlwe_crs[i][j].end());
+            tmp_ntt[i][j].resize(2 * degree);
+            ntt(tmp_ntt[i][j], ctxt_modulus, root);
+        }
+    }
+
     // Perform matrix-vector multiplication in parallel
     #pragma omp parallel for
-    for(int i = 0; i < numInstance; ++i)
+    for (int i = 0; i < numInstance; ++i)
     {
-        vector<poly> tmp(rank, poly(2 * degree));
-        // Compute NTT of mlwe_crs rows
-        for(int j = 0; j < rank; ++j)
+        for (int j = 0; j < rank; ++j)
         {
-            tmp[j] = poly(mlwe_crs[i][j].begin(), mlwe_crs[i][j].end());
-            tmp[j].resize(2 * degree);
-            ntt(tmp[j], ctxt_modulus, root);
-            multiply_ntt(tmp[j], sk_ntt[j], tmp[j], ctxt_modulus, root, true);
-            // Add tmp to qry[i] and ensure results are within modulus
-            for(int k = 0; k < degree; ++k)
+            poly tmp(2 * degree);
+            multiply_ntt(tmp_ntt[i][j], sk_ntt[j], tmp, ctxt_modulus, root, true);
+            for (int k = 0; k < degree; ++k)
             {
-                #pragma omp critical
-                qry[i][k] = (qry[i][k] + tmp[j][k]) % ctxt_modulus;
+                #pragma omp atomic update
+                qry[i][k] += tmp[k];
+                #pragma omp atomic update
+                qry[i][k] %= ctxt_modulus;
             }
         }
 
-        for(int k = 0; k < degree; ++k)
+        for (int k = 0; k < degree; ++k)
         {
             qry[i][k] = (qry[i][k] + generateDiscreteGaussian(0, 6.4)) % ctxt_modulus;
         }
     }
+
     qry[blk][pos] = (qry[blk][pos] + param.getScale()) % ctxt_modulus;
 }
 
